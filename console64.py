@@ -32,7 +32,6 @@ def loadfile(filename):
     with open(filename) as f:
         return [ord(i) for i in f.read()]
 
-
 class Memory(object):
     def __init__(self):
         self.kernal = loadfile('roms/kernal.rom')
@@ -40,27 +39,8 @@ class Memory(object):
         self.ram = [0x00] * 0x10000
         self.do_log = False
 
-    def __setitem__log(self, address, value):
-        self.ram[address] = value
-        if self.do_log:
-            self.log('\t(write) [%04x] = %02x %s' % (address, value, repr(chr(value))))
-
     def __setitem__(self, address, value):
         self.ram[address] = value
-
-    def __getitem__log(self, address):
-        v = None
-
-        if address == 0xd012:
-            return 0
-
-        if v is None:
-            v = self.ram[address]
-
-        if self.do_log:
-            self.log('\t(read)  [%04x] = %02x' % (address, v))
-
-        return v
 
     def __getitem__(self, address):
         if address == 0xd012:
@@ -73,22 +53,6 @@ class Memory(object):
             return self.basic[address - 0xa000]
 
         return self.ram[address]
-
-    def add_overlay(self, data, start, end):
-        self.overlays.append((MemoryRange(start, end), data))
-
-    def overlay_file(self, filename, start, end):
-        with open(filename) as f:
-            data = [ord(i) for i in f.read()]
-            self.add_overlay(data, start, end)
-
-    def log(self, l):
-        if self.do_log:
-            print l
-
-    def load_file(self, filename):
-        with open(filename) as f:
-            return [ord(i) for i in f.read()]
 
 class MemoryCommenter(object):
     def __init__(self, memory):
@@ -173,7 +137,8 @@ class C64(object):
         self.cpu.x = y
         self.cpu.pc = 0xaaca
 
-#C64().run_for(1000000)
 def run():
     C64().run_until(0xa560)
 
+if __name__ == '__main__':
+    C64().run_for(1000000)
