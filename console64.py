@@ -37,10 +37,13 @@ class Memory(object):
         self.ram = [0x00] * 0x10000
         self.do_log = False
 
-    def __setitem__(self, address, value):
+    def __setitem__log(self, address, value):
         self.ram[address] = value
         if self.do_log:
             self.log('\t(write) [%04x] = %02x %s' % (address, value, repr(chr(value))))
+
+    def __setitem__(self, address, value):
+        self.ram[address] = value
 
     def __getitem__log(self, address):
         v = None
