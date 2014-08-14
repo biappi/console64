@@ -118,19 +118,19 @@ class C64(object):
         self.cpu.memory = self.mem
         self.cpu.pc     = (pc_hi << 8) + pc_low
 
-        self.native_funcs = []
+        self.native_funcs = {}
 
         for name, func in vars(self.__class__).iteritems():
             try:
                 addr = int(name[1:5], 16)
-                self.native_funcs.append((addr, func))
+                self.native_funcs[addr] = func
             except:
                 pass
 
     def step(self):
-        for addr, func in self.native_funcs:
-            if self.cpu.pc == addr:
-                func(self)
+        f = self.native_funcs.get(self.cpu.pc, None)
+        if f:
+            f(self)
 
         self.cpu.step()
 
