@@ -133,9 +133,8 @@ class C64(object):
                 pass
 
     def step(self):
-        f = self.native_funcs.get(self.cpu.pc, None)
-        if f:
-            f(self)
+        if self.cpu.pc in self.native_funcs:
+            self.native_funcs[self.cpu.pc](self)
 
         self.cpu.step()
 
