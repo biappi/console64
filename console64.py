@@ -42,7 +42,7 @@ class Memory(object):
         if self.do_log:
             self.log('\t(write) [%04x] = %02x %s' % (address, value, repr(chr(value))))
 
-    def __getitem__(self, address):
+    def __getitem__log(self, address):
         v = None
 
         if address == 0xd012:
@@ -59,6 +59,16 @@ class Memory(object):
             self.log('\t(read)  [%04x] = %02x' % (address, v))
 
         return v
+
+    def __getitem__(self, address):
+        if address == 0xd012:
+            return 0
+
+        for overlay, data in self.overlays:
+            if address in overlay:
+                return data[address - overlay.start]
+
+        return self.ram[address]
 
     def add_overlay(self, data, start, end):
         self.overlays.append((MemoryRange(start, end), data))
