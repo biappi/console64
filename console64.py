@@ -49,7 +49,7 @@ class Memory(object):
 
         for overlay, data in self.overlays:
             if address in overlay:
-                v = ord(data[address - overlay.start])
+                v = data[address - overlay.start]
 
         if v is None:
             v = self.ram[address]
@@ -62,7 +62,8 @@ class Memory(object):
 
     def overlay_file(self, filename, start, end):
         with open(filename) as f:
-            self.add_overlay(f.read(), start, end)
+            data = [ord(i) for i in f.read()]
+            self.add_overlay(data, start, end)
 
     def log(self, l):
         if self.do_log:
