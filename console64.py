@@ -122,9 +122,7 @@ class C64(object):
             self.step()
 
     def run_until(self, end_pc):
-        while True:
-            if self.cpu.pc == end_pc:
-                break
+        while self.cpu.pc != end_pc:
             self.step()
 
     def xFFD2_c64print(self):
@@ -154,5 +152,7 @@ class C64(object):
         self.cpu.x = y
         self.cpu.pc = 0xaaca
 
-C64().run_for(1000000)
-#C64().run_until(0xa560)
+#C64().run_for(1000000)
+def run():
+    C64().run_until(0xa560)
+
