@@ -28,12 +28,15 @@ class Comment(MemoryRange):
             return self.comment
         return '%s (%s)' % (self.comment, self.name)
 
+def loadfile(filename):
+    with open(filename) as f:
+        return [ord(i) for i in f.read()]
+
+
 class Memory(object):
     def __init__(self):
-        self.overlays = []
-        self.overlay_file('roms/kernal.rom',    0xe000, 0xffff)
-        self.overlay_file('roms/character.rom', 0xd000, 0xdfff)
-        self.overlay_file('roms/basic.rom',     0xa000, 0xbfff)
+        self.kernal = loadfile('roms/kernal.rom')
+        self.basic  = loadfile('roms/basic.rom')
         self.ram = [0x00] * 0x10000
         self.do_log = False
 
@@ -51,10 +54,6 @@ class Memory(object):
         if address == 0xd012:
             return 0
 
-        for overlay, data in self.overlays:
-            if address in overlay:
-                v = data[address - overlay.start]
-
         if v is None:
             v = self.ram[address]
 
@@ -67,9 +66,11 @@ class Memory(object):
         if address == 0xd012:
             return 0
 
-        for overlay, data in self.overlays:
-            if address in overlay:
-                return data[address - overlay.start]
+        if 0xe000 <= address and address <=0xffff:
+            return self.kernal[address - 0xe000]
+
+        if 0xa000 <= address and address <=0xbfff:
+            return self.basic[address - 0xa000]
 
         return self.ram[address]
 
@@ -84,6 +85,10 @@ class Memory(object):
     def log(self, l):
         if self.do_log:
             print l
+
+    def load_file(self, filename):
+        with open(filename) as f:
+            return [ord(i) for i in f.read()]
 
 class MemoryCommenter(object):
     def __init__(self, memory):
