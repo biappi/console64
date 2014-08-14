@@ -90,66 +90,69 @@ class MemoryCommenter(object):
             if address in c:
                 print '\t        %s' % c
 
-def c64print_(cpu):
-    c = cpu.a
-    num = ord('0') <= c <= ord('9')
-    upp = ord('A') <= c <= ord('Z')
-    low = ord('a') <= c <= ord('z')
+class C64(object):
+    def __init__(self):
+        self.mem = Memory()
+        self.cpu = MPU()
 
-    if num or upp or low:
-        s = '(%s)' % chr(c)
-    else:
-        s = ''
+        pc_low = self.mem[0xfffc]
+        pc_hi  = self.mem[0xfffd]
 
-    print '%02x %03d' % (c, c), s
-    return
+        self.cpu.memory = self.mem
+        self.cpu.pc     = (pc_hi << 8) + pc_low
 
-def c64print(cpu):
-    c = cpu.a
+        self.native_funcs = []
 
-    if c == 0x93:
-        pass
+        for name, func in vars(self.__class__).iteritems():
+            try:
+                addr = int(name[1:5], 16)
+                self.native_funcs.append((addr, func))
+            except:
+                pass
 
-    elif c == 0x0a:
-        pass
+    def step(self):
+        for addr, func in self.native_funcs:
+            if self.cpu.pc == addr:
+                func(self)
 
-    elif c == 0x0d:
-        sys.stdout.write('\n')
+        self.cpu.step()
 
-    else:
-        sys.stdout.write(chr(c))
+    def run_for(self, cycles):
+        for x in xrange(cycles):
+            self.step()
 
-def c64input(cpu):
-    x = raw_input()
-    y = 0
+    def run_until(self, end_pc):
+        while True:
+            if self.cpu.pc == end_pc:
+                break
+            self.step()
 
-    for i in x:
-        cpu.memory[0x0200 + y] = ord(i)
-        y += 1
+    def xFFD2_c64print(self):
+        c = self.cpu.a
 
-    cpu.memory[0x0200 + y] = 0x0d
-    cpu.x = y
-    cpu.pc = 0xaaca
+        if c == 0x93:
+            pass
 
-mem = Memory()
-cpu = MPU()
-dis = Disassembler(cpu)
+        elif c == 0x0a:
+            pass
 
-cpu.memory = MemoryCommenter(mem)
-cpu.pc = mem[0xfffc] + (mem[0xfffd] << 8)
+        elif c == 0x0d:
+            sys.stdout.write('\n')
 
-for x in xrange(1000000):
-    if cpu.pc == 0xffd2:
-        c64print(cpu)
+        else:
+            sys.stdout.write(chr(c))
 
-    if cpu.pc == 0xA560:
-        # mem.do_log = 1
-        c64input(cpu)
+    def xA560_c64input(self):
+        x = raw_input()
+        y = 0
 
-    if mem.do_log:
-        mem.do_log = False
-        print '%04X %s' % (cpu.pc, dis.instruction_at(cpu.pc)[1])
-        mem.do_log = True
+        for i in x:
+            self.cpu.memory[0x0200 + y] = ord(i)
+            y += 1
 
-    cpu.step()
+        self.cpu.memory[0x0200 + y] = 0x0d
+        self.cpu.x = y
+        self.cpu.pc = 0xaaca
 
+C64().run_for(1000000)
+#C64().run_until(0xa560)
