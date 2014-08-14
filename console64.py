@@ -3,31 +3,6 @@ from py65.disassembler import Disassembler
 
 import sys
 
-class MemoryRange(object):
-    def __init__(self, start, end):
-        self.start = start
-        self.end   = end
-
-    def __contains__(self, address):
-        return self.start <= address and address <= self.end
-
-class Comment(MemoryRange):
-    def __init__(self, line):
-        self.name    = line[:7].strip()
-        self.start   = line[8:12].strip()
-        self.end     = line[13:17].strip()
-        self.comment = line[18:].strip()
-
-        self.end = self.start if self.end == '' else self.end
-
-        self.start = int(self.start, 16)
-        self.end   = int(self.end,   16)
-
-    def __str__(self):
-        if not self.name:
-            return self.comment
-        return '%s (%s)' % (self.comment, self.name)
-
 def loadfile(filename):
     with open(filename) as f:
         return [ord(i) for i in f.read()]
@@ -53,28 +28,6 @@ class Memory(object):
             return self.basic[address - 0xa000]
 
         return self.ram[address]
-
-class MemoryCommenter(object):
-    def __init__(self, memory):
-        self.memory = memory
-        with open('memorymap.txt') as memorymap:
-            self.comments = [Comment(line) for line in memorymap]
-
-    def __setitem__(self, address, value):
-        self.memory[address] = value
-        self.comment(address)
-
-    def __getitem__(self, address):
-        v = self.memory[address]
-        self.comment(address)
-        return v
-
-    def comment(self, address):
-        if not self.memory.do_log:
-            return
-        for c in self.comments:
-            if address in c:
-                print '\t        %s' % c
 
 class C64(object):
     def __init__(self):
@@ -141,4 +94,4 @@ def run():
     C64().run_until(0xa560)
 
 if __name__ == '__main__':
-    C64().run_for(1000000)
+    run()
