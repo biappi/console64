@@ -47,6 +47,41 @@ def resolve(address):
     else:
         return impl
 
+
+# ERROR CONSTANTS
+# ---------------
+
+E_TOOMANYFILES       = 0x01
+E_FILEOPEN           = 0x02
+E_FILENOTOPEN        = 0x03
+E_FILENOTFOUND       = 0x04
+E_DEVICENOTPRESENT   = 0x05
+E_NOTINPUTFILE       = 0x06
+E_NOTOUTPUTFILE      = 0x07
+E_MISSINGFILENAME    = 0x08
+E_ILLEGALDEVICENR    = 0x09
+E_NEXTWITHOUTFOR     = 0x0A
+E_SYNTAX             = 0x0B
+E_RETURNWITHOUTGOSUB = 0x0C
+E_OUTOFDATA          = 0x0D
+E_ILLEGALQUANTITY    = 0x0E
+E_OVERFLOW           = 0x0F
+E_OUTOFMEMORY        = 0x10
+E_UNDEFDSTATEMENT    = 0x11
+E_BADSUBSCRIPT       = 0x12
+E_REDIMDARRAY        = 0x13
+E_DIVISIONBYZERO     = 0x14
+E_ILLEGALDIRECT      = 0x15
+E_TYPEMISMATCH       = 0x16
+E_STRINGTOOLONG      = 0x17
+E_FILEDATA           = 0x18
+E_FORMULATOOCOMPLEX  = 0x19
+E_CANTCONTINUE       = 0x1A
+E_UNDEFDFUNCTION     = 0x1B
+E_VERIFY             = 0x1C
+E_LOAD               = 0x1D
+E_BREAK              = 0x1E
+
 # KERNAL IMPLEMENTATION
 # ---------------------
 
@@ -213,10 +248,49 @@ def load(c64):
     'Load RAM From Device'
     pass
 
-@kernal_not_impl(0xffd8)
+@kernal_impl(0xffd8)
 def save(c64):
     'Save RAM To Device'
-    pass
+
+    name_len = c64.mem[0x00b7]
+    name_ptr = c64.mem[0x00bb] + (c64.mem[0x00bc] << 8)
+    name = ''
+
+    if name_len == 0:
+        c64.cpu.p |= c64.cpu.CARRY
+        c64.cpu.a  = E_MISSINGFILENAME
+        return
+
+    c64.cpu.p &= ~c64.cpu.CARRY
+
+    start_ptr_1 = c64.cpu.a
+    start_ptr   = c64.mem[start_ptr_1] + (c64.mem[start_ptr_1 + 1] << 8)
+    end_ptr     = c64.cpu.x + (c64.cpu.y << 8)
+
+    file_no     = c64.mem[0x00b8]
+    addr2       = c64.mem[0x00b9]
+    dev_no      = c64.mem[0x00ba]
+
+    for i in xrange(name_len):
+        name += chr(c64.mem[name_ptr + i])
+
+    print
+    print 'DUMPING SAVE INFORMATION'
+    print '------------------------'
+    print 'filename:', name
+    print 'file #:  ', file_no
+    print '2nd addr:', addr2
+    print 'device #:', dev_no
+    print 'start:   ', start_ptr
+    print 'end:     ', end_ptr
+    print
+    for i in xrange(start_ptr, end_ptr + 1):
+        print '%02x' % c64.mem[i],
+        if (i % 4) == 0:
+            print '',
+        if (i % 16) == 0:
+            print
+    print
 
 @kernal_not_impl(0xffdb)
 def settim(c64):
