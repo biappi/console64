@@ -20,27 +20,32 @@ willy@Minene console64 master$ python console64.py
  64K RAM SYSTEM  38911 BASIC BYTES FREE
 
 READY.
-10 PRINT "SUCA"
-
-RUN
-
-SUCA
-
-READY.
+10 PRINT "HELLO"
+20 PRINT " WORLD"
+30 PRINT "  FROM"
+```
+```
 LIST
 
-
-10 PRINT "SUCA"
+10 PRINT "HELLO"
+20 PRINT " WORLD"
+30 PRINT "  FROM"
 READY.
-Traceback (most recent call last):
-  File "console64.py", line 157, in <module>
-    C64().run_for(1000000)
-  File "console64.py", line 122, in run_for
-    self.step()
-  File "console64.py", line 116, in step
-    func(self)
-  File "console64.py", line 146, in xA560_c64input
-    x = raw_input()
-EOFError
-willy@Minene console64 master$
+```
+
+```
+30
+```
+```
+LIST
+
+10 PRINT "HELLO"
+20 PRINT " WORLD"
+READY.
+```
+RUN
+HELLO
+ WORLD
+
+READY.
 ```
