@@ -2,6 +2,7 @@ from py65.devices.mpu6502 import MPU
 from py65.disassembler import Disassembler
 
 import sys
+import kernal
 
 def loadfile(filename):
     with open(filename) as f:
@@ -40,58 +41,31 @@ class C64(object):
         self.cpu.memory = self.mem
         self.cpu.pc     = (pc_hi << 8) + pc_low
 
-        self.native_funcs = {}
-
-        for name, func in vars(self.__class__).iteritems():
-            try:
-                addr = int(name[1:5], 16)
-                self.native_funcs[addr] = func
-            except:
-                pass
 
     def step(self):
-        if self.cpu.pc in self.native_funcs:
-            self.native_funcs[self.cpu.pc](self)
+        pc = self.cpu.pc
+
+        if kernal.base <= pc and pc <= kernal.end:
+            kernal_function = kernal.resolve(pc)
+            if kernal_function:
+                kernal_function(self)
+                self.cpu.inst_0x60() # RTS
+                return
 
         self.cpu.step()
 
     def run_for(self, cycles):
         for x in xrange(cycles):
             self.step()
+        print
+        print 'Emulation over, did %d CPU cycles.' % cycles
 
     def run_until(self, end_pc):
         while self.cpu.pc != end_pc:
             self.step()
 
-    def xFFD2_c64print(self):
-        c = self.cpu.a
-
-        if c == 0x93:
-            pass
-
-        elif c == 0x0a:
-            pass
-
-        elif c == 0x0d:
-            sys.stdout.write('\n')
-
-        else:
-            sys.stdout.write(chr(c))
-
-    def xA560_c64input(self):
-        x = raw_input()
-        y = 0
-
-        for i in x:
-            self.cpu.memory[0x0200 + y] = ord(i)
-            y += 1
-
-        self.cpu.memory[0x0200 + y] = 0x0d
-        self.cpu.x = y
-        self.cpu.pc = 0xaaca
-
 def run():
     C64().run_until(0xa560)
 
 if __name__ == '__main__':
-    run()
+    C64().run_for(1000000)
