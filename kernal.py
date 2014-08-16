@@ -243,10 +243,30 @@ def ichrout(c64):
     if c:
         sys.stdout.write(chr(c))
 
-@kernal_not_impl(0xffd5)
+@kernal_impl(0xffd5)
 def load(c64):
     'Load RAM From Device'
-    pass
+
+    # 10 PRINT"EXAMPLE LOAD"
+    # 20 GOTO10
+
+    example = "15 08 0a 00 99 22 45 58 41 4d 50 4c 45 20 4c 4f 41 44 22 00 1d 08 14 00 89 31 30 00 00 00 00"
+    example = [int(i, 16) for i in example.split(' ')]
+
+    c64.cpu.p &= ~c64.cpu.CARRY
+
+    c64.mem[0xc3] = c64.cpu.x
+    c64.mem[0xc4] = c64.cpu.y
+    c64.mem[0x93] = c64.cpu.a
+
+    store_into = c64.cpu.x + (c64.cpu.y << 8)
+    store_end = store_into + len(example)
+
+    for i, byte in enumerate(example):
+        c64.mem[store_into + i] = byte
+
+    c64.cpu.x =  store_end & 0x00ff
+    c64.cpu.y = (store_end & 0xff00) >> 8
 
 @kernal_impl(0xffd8)
 def save(c64):
