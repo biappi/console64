@@ -47,6 +47,11 @@ def resolve(address):
     else:
         return impl
 
+def int16_to_int8(number):
+    return (number & 0xff00) >> 8, number & 0x00ff
+
+def int8_to_int16(hi, lo):
+    return (hi << 8) + lo
 
 # ERROR CONSTANTS
 # ---------------
@@ -253,6 +258,9 @@ def load(c64):
     example = "15 08 0a 00 99 22 45 58 41 4d 50 4c 45 20 4c 4f 41 44 22 00 1d 08 14 00 89 31 30 00 00 00 00"
     example = [int(i, 16) for i in example.split(' ')]
 
+    listing = ["this is a test", "of the emergency broadcast system"]
+    example = list(encode_lines(listing))
+
     c64.cpu.p &= ~c64.cpu.CARRY
 
     c64.mem[0xc3] = c64.cpu.x
@@ -265,15 +273,14 @@ def load(c64):
     for i, byte in enumerate(example):
         c64.mem[store_into + i] = byte
 
-    c64.cpu.x =  store_end & 0x00ff
-    c64.cpu.y = (store_end & 0xff00) >> 8
+    c64.cpu.y, c64.cpu.x = int16_to_int8(store_end)
 
 @kernal_impl(0xffd8)
 def save(c64):
     'Save RAM To Device'
 
     name_len = c64.mem[0x00b7]
-    name_ptr = c64.mem[0x00bb] + (c64.mem[0x00bc] << 8)
+    name_ptr = int8_to_int16(c64.mem[0x00bc], c64.mem[0x00bb])
     name = ''
 
     if name_len == 0:
@@ -284,8 +291,8 @@ def save(c64):
     c64.cpu.p &= ~c64.cpu.CARRY
 
     start_ptr_1 = c64.cpu.a
-    start_ptr   = c64.mem[start_ptr_1] + (c64.mem[start_ptr_1 + 1] << 8)
-    end_ptr     = c64.cpu.x + (c64.cpu.y << 8)
+    start_ptr   = int8_to_int16(c64.mem[start_ptr_1 + 1], c64.mem[start_ptr_1])
+    end_ptr     = int8_to_int16(c64.cpu.y, c64.cpu.x)
 
     file_no     = c64.mem[0x00b8]
     addr2       = c64.mem[0x00b9]
@@ -356,4 +363,35 @@ def plot(c64):
 def iobase(c64):
     'Return I/O Base Address'
     pass
+
+# BASIC LISTING ENCODING
+# ----------------------
+
+# Thank you, random internet guy
+# http://www.pagetable.com/?p=273
+
+def encode_lines(lines):
+    current = 0x0401 # apparently it's the start of VIC-20
+                     # BASIC ram, which will be however
+                     # rebased by the C64 BASICv2
+
+    for i, line in enumerate(lines):
+        next_line = current + len(lines) + 2 + 1 # 2 = space for line number
+                                                 # 1 = space for end-of-line
+        line_no_hi,   line_no_lo   = int16_to_int8(i)
+        next_line_hi, next_line_lo = int16_to_int8(next_line)
+
+        yield next_line_lo
+        yield next_line_hi
+
+        yield line_no_lo
+        yield line_no_hi
+
+        for char in line:
+            yield ord(char)
+
+        yield 0x00
+
+    yield 0x00
+    yield 0x00
 
