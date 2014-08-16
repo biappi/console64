@@ -4,11 +4,16 @@ Console 64
 This simple project is supposed to expose an emulation of the Commodore 64
 in a UNIX console, just for the lolz.
 
-memorymap.txt
--------------
+Status
+------
 
-This is a table from the Commodore 64 reference manual describing a bunch
-of memory locations used by the ROMs.
+Simple BASIC commands should work. There is some stub support for loading/saving
+BASIC programs, but it is not complete.
+
+Docs
+----
+A bit of C64 documentation can be found in the ```docs/``` directory. The annotated
+ROM disassembly is particularly useful. Thanks Marko Makela!
 
 Example
 -------
