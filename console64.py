@@ -3,10 +3,30 @@ from py65.disassembler import Disassembler
 
 import sys
 import kernal
+import maps
 
 def loadfile(filename):
     with open(filename) as f:
         return [ord(i) for i in f.read()]
+
+io_map = (
+    (0xD000, 0xD3FF, 'VIC (Video Controller)'),
+    (0xD400, 0xD7FF, 'SID (Sound Synthesizer)'),
+    (0xD800, 0xDBFF, 'Color RAM'),
+    (0xDC00, 0xDCFF, 'CIA1 (Keyboard)'),
+    (0xDD00, 0xDDFF, 'CIA2 (Serial Bus, User Port/RS-232)'),
+    (0xDE00, 0xDEFF, 'Open I/O slot #l (CP/M Enable)'),
+    (0xDF00, 0xDFFF, 'Open I/O slot #2 (Disk)'),
+)
+
+ioregisters = maps.load_ioregisters()
+
+def io_thing(address):
+    for i in ioregisters:
+        if i.start <= address and address <= i.end:
+            return i.comment
+
+    return 'N/A'
 
 class Memory(object):
     def __init__(self):
@@ -15,6 +35,8 @@ class Memory(object):
         self.ram = [0x00] * 0x10000
 
     def __setitem__(self, address, value):
+#        if 0xd000 <= address and address <=0xdfff:
+#            print "IO WRITE: %04x - %02x - %s" % (address, value, io_thing(address))
         self.ram[address] = value
 
     def __getitem__(self, address):
@@ -26,6 +48,10 @@ class Memory(object):
 
         if 0xa000 <= address and address <=0xbfff:
             return self.basic[address - 0xa000]
+
+#        if 0xd000 <= address and address <=0xdfff:
+#            print "IO READ: %02x - %s" % (address, io_thing(address))
+#            return 0
 
         return self.ram[address]
 
@@ -106,4 +132,5 @@ def run():
     C64().run_until(0xa560)
 
 if __name__ == '__main__':
+    #run()
     C64().run_for(1000000)
