@@ -1,5 +1,6 @@
 import sys
 import getch
+import os
 
 # HELPER FUNCTIONS
 # ----------------
@@ -252,14 +253,31 @@ def ichrout(c64):
 def load(c64):
     'Load RAM From Device'
 
-    # 10 PRINT"EXAMPLE LOAD"
-    # 20 GOTO10
+    name_len = c64.mem[0x00b7]
+    name_ptr = int8_to_int16(c64.mem[0x00bc], c64.mem[0x00bb])
+    name = ''
 
-    example = "15 08 0a 00 99 22 45 58 41 4d 50 4c 45 20 4c 4f 41 44 22 00 1d 08 14 00 89 31 30 00 00 00 00"
-    example = [int(i, 16) for i in example.split(' ')]
+    if name_len == 0:
+        c64.cpu.p |= c64.cpu.CARRY
+        c64.cpu.a  = E_MISSINGFILENAME
+        return
 
-    listing = ["this is a test", "of the emergency broadcast system"]
-    example = list(encode_lines(listing))
+    for i in xrange(name_len):
+        name += chr(c64.mem[name_ptr + i])
+
+    if name == '$':
+        cwd = os.getcwd()
+        message = ['DIRECTORY LISTING OF:', '   ' + cwd.upper(), '']
+
+        directory_listing = filter(lambda i: not i.startswith('.'),
+                                   os.listdir(cwd))
+        message.extend((i.upper() for i in directory_listing))
+
+        print message
+    else:
+        message = ['this is a test', 'of the emergency broadcast system']
+    
+    bytes_to_load = list(encode_lines(message))
 
     c64.cpu.p &= ~c64.cpu.CARRY
 
@@ -268,11 +286,11 @@ def load(c64):
     c64.mem[0x93] = c64.cpu.a
 
     store_into = c64.cpu.x + (c64.cpu.y << 8)
-    store_end = store_into + len(example)
+    store_end = store_into + len(bytes_to_load)
 
-    for i, byte in enumerate(example):
+    for i, byte in enumerate(bytes_to_load):
         c64.mem[store_into + i] = byte
-
+        print '%02x' % byte
     c64.cpu.y, c64.cpu.x = int16_to_int8(store_end)
 
 @kernal_impl(0xffd8)
@@ -376,10 +394,14 @@ def encode_lines(lines):
                      # rebased by the C64 BASICv2
 
     for i, line in enumerate(lines):
-        next_line = current + len(lines) + 2 + 1 # 2 = space for line number
-                                                 # 1 = space for end-of-line
-        line_no_hi,   line_no_lo   = int16_to_int8(i)
+        next_line = current + len(line) + 2 + 2 + 1 # 2 = space for next ptr
+                                                    # 2 = space for line number
+                                                    # 1 = space for end-of-line
+
+        line_no_hi,   line_no_lo   = int16_to_int8((i + 1) * 10)
         next_line_hi, next_line_lo = int16_to_int8(next_line)
+
+        current = next_line
 
         yield next_line_lo
         yield next_line_hi
