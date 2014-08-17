@@ -54,6 +54,18 @@ def int16_to_int8(number):
 def int8_to_int16(hi, lo):
     return (hi << 8) + lo
 
+def hex_dump(i, byte):
+    if (i % 16) == 0:
+        print " %04x | " % i,
+
+    i += 1
+
+    print '%02x' % byte,
+    if (i % 4) == 0:
+        print '',
+    if (i % 16) == 0:
+        print
+
 # ERROR CONSTANTS
 # ---------------
 
@@ -267,19 +279,37 @@ def load(c64):
 
     if name == '$':
         cwd = os.getcwd()
-        message = ['DIRECTORY LISTING OF:', '   ' + cwd.upper(), '']
+        message = ['DIRECTORY LISTING OF:', '   ' + cwd.upper(), ' ']
 
+        directory_listing = filter(lambda i: i.endswith('.CBM'),
+                                   os.listdir(cwd))
         directory_listing = filter(lambda i: not i.startswith('.'),
                                    os.listdir(cwd))
-        message.extend((i.upper() for i in directory_listing))
+        directory_listing = filter(lambda i: i.upper() == i,
+                                   os.listdir(cwd))
+        directory_listing = ('\x93"%s":\x80' % i for i in directory_listing)
+        # 0x93 - BASIC token for 'LOAD'
+        # 0x80 - BASIC token for 'END'
 
-        print message
+        directory_listing = list(directory_listing)
+
+        if len(directory_listing):
+            message.extend(directory_listing)
+            message.extend([' ', 'LOAD A FILE USING A GOTO<NR> STATEMENT'])
+        else:
+            message.append('NO *.CBM BASIC IN THE DIRECTORY')
+            message.append('(FILENAME MUST BE UPPERCAE)')
+
+        bytes_to_load = list(encode_lines(message))
     else:
-        message = ['this is a test', 'of the emergency broadcast system']
-    
-    bytes_to_load = list(encode_lines(message))
-
-    c64.cpu.p &= ~c64.cpu.CARRY
+        try:
+            bytes_to_load = open(name).read()
+            bytes_to_load = (ord(i) for i in bytes_to_load)
+            bytes_to_load = list(bytes_to_load)
+        except:
+            c64.cpu.p |= c64.cpu.CARRY
+            c64.cpu.a  = E_NOTINPUTFILE
+            return
 
     c64.mem[0xc3] = c64.cpu.x
     c64.mem[0xc4] = c64.cpu.y
@@ -290,7 +320,9 @@ def load(c64):
 
     for i, byte in enumerate(bytes_to_load):
         c64.mem[store_into + i] = byte
-        print '%02x' % byte
+
+    c64.cpu.p &= ~c64.cpu.CARRY
+    c64.cpu.a = 0
     c64.cpu.y, c64.cpu.x = int16_to_int8(store_end)
 
 @kernal_impl(0xffd8)
@@ -319,23 +351,10 @@ def save(c64):
     for i in xrange(name_len):
         name += chr(c64.mem[name_ptr + i])
 
-    print
-    print 'DUMPING SAVE INFORMATION'
-    print '------------------------'
-    print 'filename:', name
-    print 'file #:  ', file_no
-    print '2nd addr:', addr2
-    print 'device #:', dev_no
-    print 'start:   ', start_ptr
-    print 'end:     ', end_ptr
-    print
-    for i in xrange(start_ptr, end_ptr + 1):
-        print '%02x' % c64.mem[i],
-        if (i % 4) == 0:
-            print '',
-        if (i % 16) == 0:
-            print
-    print
+    name = name.upper() + '.CBM'
+    to_save = ''.join(chr(c64.mem[i]) for i in xrange(start_ptr, end_ptr + 1))
+
+    open(name, 'w').write(to_save)
 
 @kernal_not_impl(0xffdb)
 def settim(c64):
