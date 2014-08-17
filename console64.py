@@ -3,30 +3,31 @@ from py65.disassembler import Disassembler
 
 import sys
 import kernal
-import maps
 
 def loadfile(filename):
     with open(filename) as f:
         return [ord(i) for i in f.read()]
 
-io_map = (
-    (0xD000, 0xD3FF, 'VIC (Video Controller)'),
-    (0xD400, 0xD7FF, 'SID (Sound Synthesizer)'),
-    (0xD800, 0xDBFF, 'Color RAM'),
-    (0xDC00, 0xDCFF, 'CIA1 (Keyboard)'),
-    (0xDD00, 0xDDFF, 'CIA2 (Serial Bus, User Port/RS-232)'),
-    (0xDE00, 0xDEFF, 'Open I/O slot #l (CP/M Enable)'),
-    (0xDF00, 0xDFFF, 'Open I/O slot #2 (Disk)'),
-)
-
-ioregisters = maps.load_ioregisters()
-
-def io_thing(address):
-    for i in ioregisters:
-        if i.start <= address and address <= i.end:
-            return i.comment
-
-    return 'N/A'
+# io_map = (
+#     (0xD000, 0xD3FF, 'VIC (Video Controller)'),
+#     (0xD400, 0xD7FF, 'SID (Sound Synthesizer)'),
+#     (0xD800, 0xDBFF, 'Color RAM'),
+#     (0xDC00, 0xDCFF, 'CIA1 (Keyboard)'),
+#     (0xDD00, 0xDDFF, 'CIA2 (Serial Bus, User Port/RS-232)'),
+#     (0xDE00, 0xDEFF, 'Open I/O slot #l (CP/M Enable)'),
+#     (0xDF00, 0xDFFF, 'Open I/O slot #2 (Disk)'),
+# )
+ 
+# import maps
+# 
+# ioregisters = maps.load_ioregisters()
+# 
+# def io_thing(address):
+#     for i in ioregisters:
+#         if i.start <= address and address <= i.end:
+#             return i.comment
+# 
+#     return 'N/A'
 
 class Memory(object):
     def __init__(self):
